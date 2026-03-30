@@ -2,7 +2,7 @@
 name=ANNCSU Loader
 qgisMinimumVersion=3.20
 qgisMaximumVersion=4.99
-description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune
+description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune / Load ANNCSU addresses from local Parquet file filtered by municipality
 version=1.2
 author=Salvatore Fiandaca
 email=pigrecoinfinito@gmail.com
