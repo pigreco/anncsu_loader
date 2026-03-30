@@ -31,6 +31,8 @@ Scarica il file Parquet ANNCSU completo dal repository ufficiale direttamente in
 ### Tab Cerca Indirizzo
 Cerca indirizzi per comune, via e/o numero civico. I risultati vengono mostrati in tabella; cliccando una riga la mappa si centra sull'indirizzo con un marker e un popup di attributi.
 
+![](gui.png)
+
 ## File Parquet ANNCSU
 
 Il dataset è disponibile su:
