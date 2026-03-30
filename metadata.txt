@@ -9,6 +9,7 @@ email=pigrecoinfinito@gmail.com
 about=Plugin per caricare i dati ANNCSU (Archivio Nazionale Numeri Civici e Strade Urbane)
     da file Parquet locale. Permette di filtrare per comune e salvare in formato
     Parquet o GeoPackage. Richiede la libreria duckdb (pip install duckdb).
+    Realizzato con Claude Code (https://claude.ai/code).
 tracker=https://github.com/pigreco/anncsu_loader/issues
 repository=https://github.com/pigreco/anncsu_loader
 homepage=https://github.com/pigreco/anncsu_loader
