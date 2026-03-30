@@ -1,0 +1,27 @@
+[general]
+name=ANNCSU Loader
+qgisMinimumVersion=3.20
+qgisMaximumVersion=4.99
+description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune
+version=1.1
+author=Your Name
+email=your@email.com
+about=Plugin per caricare i dati ANNCSU (Archivio Nazionale Numeri Civici e Strade Urbane)
+    da file Parquet locale. Permette di filtrare per comune e salvare in formato
+    Parquet o GeoPackage. Richiede la libreria duckdb (pip install duckdb).
+tracker=https://github.com/youruser/anncsu-loader/issues
+repository=https://github.com/youruser/anncsu-loader
+homepage=https://github.com/youruser/anncsu-loader
+hasProcessingProvider=no
+tags=anncsu, indirizzi, civici, parquet, duckdb, italia
+category=Database
+icon=icon.png
+experimental=True
+deprecated=False
+server=False
+changelog=
+    1.1 Porting QGIS 4 / Qt6 / PyQt6: QgsBlockingNetworkRequest per il download,
+        enum qualificati (QHeaderView.ResizeMode, QAbstractItemView.SelectionBehavior,
+        QMessageBox.StandardButton, Qt.TextFormat), QMetaType.Type al posto di QVariant,
+        QgsVectorFileWriter.WriterError e writeAsVectorFormatV3, stylesheet palette()
+    1.0 Prima versione
