@@ -16,6 +16,7 @@ from qgis.PyQt.QtCore import Qt, QSettings
 from qgis.PyQt.QtGui import QFont, QColor
 
 from qgis.core import (
+    Qgis,
     QgsVectorLayer, QgsProject, QgsPointXY,
     QgsGeometry, QgsFeature,
     QgsWkbTypes, QgsCoordinateReferenceSystem,
@@ -739,7 +740,7 @@ class AnncsuDialog(QDialog):
         self.iface.messageBar().pushMessage(
             "ANNCSU",
             f"{row.get('DIZIONE_LINGUA1','')} {row.get('CIVICO','')} — {row.get('NOME_COMUNE','')}",
-            level=0, duration=5
+            level=Qgis.MessageLevel.Info, duration=5
         )
 
         # dialogo popup attributi
