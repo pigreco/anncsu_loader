@@ -211,7 +211,7 @@ class AnncsuDialog(QDialog):
         lay.addWidget(sep)
 
         lbl_pnrr = QLabel(
-            '<p align="center" style="font-size:22px; color:gray;">'
+            '<p align="center" style="font-size:15px; color:gray;">'
             'Progetto finanziato nell\'ambito del '
             '<a href="https://www.italiadomani.gov.it/">PNRR</a>'
             ' — Missione 1, Componente 1, Investimento 1.3 '
