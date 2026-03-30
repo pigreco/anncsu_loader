@@ -167,7 +167,6 @@ class AnncsuDialog(QDialog):
         lbl_pnrr.setTextFormat(_TEXT_RICH)
         lbl_pnrr.setOpenExternalLinks(True)
         lbl_pnrr.setWordWrap(True)
-        lbl_pnrr.setAlignment(Qt.AlignCenter)
         lay.addWidget(lbl_pnrr)
 
         lbl_info = QLabel(
