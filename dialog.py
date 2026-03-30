@@ -13,7 +13,7 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
 )
 from qgis.PyQt.QtCore import Qt, QSettings
-from qgis.PyQt.QtGui import QFont, QColor, QPixmap
+from qgis.PyQt.QtGui import QFont, QColor
 
 from qgis.core import (
     QgsVectorLayer, QgsProject, QgsPointXY,
@@ -152,14 +152,6 @@ class AnncsuDialog(QDialog):
         lay.setSpacing(10)
 
         # ── info PNRR ────────────────────────────────────────────────────
-        logo_path = os.path.join(os.path.dirname(__file__), "pnrr_logo.png")
-        lbl_logo = QLabel()
-        lbl_logo.setAlignment(Qt.AlignCenter)
-        px = QPixmap(logo_path)
-        if not px.isNull():
-            lbl_logo.setPixmap(px)
-        lay.addWidget(lbl_logo)
-
         lbl_pnrr = QLabel(
             '<p align="center" style="font-size:11px; color:gray;">'
             'Progetto finanziato nell\'ambito del '
