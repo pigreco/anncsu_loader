@@ -13,7 +13,7 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
 )
 from qgis.PyQt.QtCore import Qt, QSettings
-from qgis.PyQt.QtGui import QFont, QColor
+from qgis.PyQt.QtGui import QFont, QColor, QPixmap
 
 from qgis.core import (
     QgsVectorLayer, QgsProject, QgsPointXY,
@@ -150,6 +150,33 @@ class AnncsuDialog(QDialog):
         w   = QWidget()
         lay = QVBoxLayout(w)
         lay.setSpacing(10)
+
+        # ── info PNRR ────────────────────────────────────────────────────
+        logo_path = os.path.join(os.path.dirname(__file__), "pnrr_logo.png")
+        lbl_logo = QLabel()
+        lbl_logo.setAlignment(Qt.AlignCenter)
+        px = QPixmap(logo_path)
+        if not px.isNull():
+            lbl_logo.setPixmap(px)
+        lay.addWidget(lbl_logo)
+
+        lbl_pnrr = QLabel(
+            '<p align="center" style="font-size:11px; color:gray;">'
+            'Progetto finanziato nell\'ambito del '
+            '<a href="https://www.italiadomani.gov.it/">PNRR</a>'
+            ' — Missione 1, Componente 1, Investimento 1.3 '
+            '"Dati e interoperabilità" — '
+            '<a href="https://padigitale2026.gov.it/">Misura 1.3.1</a>'
+            ' per la digitalizzazione dell\''
+            '<a href="https://www.anncsu.gov.it/">Archivio Nazionale dei '
+            'Numeri Civici e delle Strade Urbane (ANNCSU)</a>.'
+            '</p>'
+        )
+        lbl_pnrr.setTextFormat(_TEXT_RICH)
+        lbl_pnrr.setOpenExternalLinks(True)
+        lbl_pnrr.setWordWrap(True)
+        lbl_pnrr.setAlignment(Qt.AlignCenter)
+        lay.addWidget(lbl_pnrr)
 
         lbl_info = QLabel(
             "Scarica il file Parquet ANNCSU completo dal repository ufficiale.\n"
