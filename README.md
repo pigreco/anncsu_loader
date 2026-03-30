@@ -40,4 +40,7 @@ Usare il tab **Scarica** del plugin per ottenerlo, oppure scaricarlo manualmente
 
 ## Licenza
 
-Vedi licenza ANNCSU per i dati. Il codice del plugin è rilasciato sotto licenza GPL v2+.
+Il codice del plugin è rilasciato sotto licenza **MIT** — © 2025 Salvatore Fiandaca.
+Vedi il file [LICENSE](LICENSE) per il testo completo.
+
+I dati ANNCSU sono soggetti alla licenza del dataset ufficiale.
