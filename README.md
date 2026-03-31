@@ -12,10 +12,47 @@ Compatibile con **QGIS 3.20+** e **QGIS 4.x** (Qt5/Qt6).
 ## Installazione
 
 1. Copia la cartella `anncsu_loader/` nella directory dei plugin di QGIS:
-   - Linux/macOS: `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/`
+   - Linux: `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/`
+   - macOS: `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/`
    - Windows: `%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\`
 2. Installa la dipendenza: `pip install duckdb`
 3. In QGIS: *Plugin → Gestisci e installa plugin → Installato* → abilita **ANNCSU Loader**
+
+### Installazione su macOS
+
+Su macOS il plugin va copiato nel profilo utente attivo di QGIS, in genere:
+
+`~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/`
+
+Se usi un profilo QGIS diverso da `default`, sostituisci il nome del profilo nel percorso.
+
+Per installare `duckdb`, e' preferibile usare il Python incluso in QGIS. Nella maggior parte delle installazioni standard:
+
+```bash
+/Applications/QGIS.app/Contents/MacOS/bin/python3 -m pip install duckdb
+```
+
+Se quel percorso non e' presente, apri la console Python di QGIS e verifica l'interprete in uso:
+
+```python
+import sys
+print(sys.executable)
+```
+
+Poi usa il percorso restituito per installare la dipendenza:
+
+```bash
+"/percorso/del/python/di/qgis" -m pip install duckdb
+```
+
+Dopo l'installazione, riavvia QGIS se il plugin non compare subito nella lista dei plugin installati.
+
+## Agenti Copilot
+
+Nel workspace sono disponibili due agenti personalizzati in `.github/agents/`:
+
+- `Ricerca Installazione macOS`: cerca sul web i passaggi corretti per installare il plugin su macOS e restituisce una procedura verificata.
+- `Aggiorna README Installazione`: aggiorna `README.md` con istruzioni operative, in particolare per installazione e prerequisiti.
 
 ## Funzionalità
 
