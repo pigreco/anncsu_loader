@@ -3,7 +3,7 @@ name=ANNCSU Loader
 qgisMinimumVersion=3.20
 qgisMaximumVersion=4.99
 description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune / Load ANNCSU addresses from local Parquet file filtered by municipality
-version=1.3
+version=1.4
 author=Salvatore Fiandaca
 email=pigrecoinfinito@gmail.com
 about=Plugin to load ANNCSU data (Italian National Archive of Civic Numbers and Urban Streets)
@@ -26,6 +26,10 @@ experimental=True
 deprecated=False
 server=False
 changelog=
+    1.4 Fix esportazione GeoPackage: esclude colonne GEOMETRY native dal Parquet
+        (non convertibili da DuckDB in pandas); riscrive _scrivi_gpkg usando
+        osgeo.ogr (GDAL) per evitare incompatibilità di tipo con numpy/pandas
+        nullable dtypes nel memory layer PyQGIS
     1.3 Aggiunge descrizione in inglese nel campo about (richiesta dal repository QGIS)
     1.2 Aggiunge info PNRR con link nel tab Scarica; fix pushMessage per QGIS 4
         (Qgis.MessageLevel.Info); fix QFrame.Shape/Shadow enum Qt6

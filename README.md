@@ -77,6 +77,23 @@ Il dataset è disponibile su:
 
 Usare il tab **Scarica** del plugin per ottenerlo, oppure scaricarlo manualmente e puntare al file con **Sfoglia**.
 
+## Changelog
+
+### 1.4
+- Fix esportazione GeoPackage: il Parquet ANNCSU contiene una colonna `GEOMETRY` nativa che DuckDB non riesce a convertire in pandas. La colonna viene ora esclusa automaticamente prima della fetch; la scrittura del GeoPackage usa `osgeo.ogr` (GDAL) invece del memory layer PyQGIS, eliminando i problemi di tipo con numpy/pandas nullable dtypes.
+
+### 1.3
+- Aggiunta descrizione in inglese nel campo `about` (richiesta dal repository QGIS ufficiale).
+
+### 1.2
+- Aggiunge info PNRR con link nel tab Scarica; fix `pushMessage` per QGIS 4 (`Qgis.MessageLevel.Info`); fix `QFrame.Shape`/Shadow enum Qt6.
+
+### 1.1
+- Porting QGIS 4 / Qt6 / PyQt6: `QgsBlockingNetworkRequest`, enum qualificati, `QMetaType.Type`, `QgsVectorFileWriter.WriterError`, `writeAsVectorFormatV3`.
+
+### 1.0
+- Prima versione.
+
 ## Licenza
 
 Il codice del plugin è rilasciato sotto licenza **MIT** — © 2025 Salvatore Fiandaca.
