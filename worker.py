@@ -181,9 +181,21 @@ class AnncsuWorker(QThread):
 
         elif self.fmt == "gpkg":
             self.progresso.emit(35, "Lettura dati in memoria...")
+            # Escludi colonne GEOMETRY non convertibili in pandas da DuckDB
+            rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")
+            safe_cols = [
+                col for col, dtype in zip(rel.columns, rel.dtypes)
+                if "GEOMETRY" not in str(dtype).upper()
+            ]
+            col_list = ", ".join(f'"{c}"' for c in safe_cols)
             df = con.execute(
-                f"SELECT * FROM read_parquet('{parquet_unix}') {filtro}"
+                f"SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}"
             ).fetchdf()
+            if "latitude" not in df.columns or "longitude" not in df.columns:
+                raise Exception(
+                    f"Colonne coordinate non trovate nel Parquet.\n"
+                    f"Colonne disponibili: {list(df.columns)}"
+                )
             if self._cancel:
                 return
             self.progresso.emit(55, "Costruzione layer vettoriale...")
@@ -192,91 +204,76 @@ class AnncsuWorker(QThread):
             self.completato.emit(self.output_path, n)
 
     def _scrivi_gpkg(self, df) -> int:
-        from qgis.core import (
-            QgsVectorLayer, QgsField, QgsFeature,
-            QgsGeometry, QgsPointXY, QgsProject,
-            QgsVectorFileWriter,
-        )
+        import pandas as _pd
+        from osgeo import ogr, osr
 
-        # Qt5/Qt6 compat: QVariant → QMetaType.Type
-        try:
-            from qgis.PyQt.QtCore import QMetaType
-            tipo_campo = {
-                "object":  QMetaType.Type.QString,
-                "int64":   QMetaType.Type.LongLong,
-                "float64": QMetaType.Type.Double,
-                "bool":    QMetaType.Type.Bool,
-            }
-        except (ImportError, AttributeError):
-            from qgis.PyQt.QtCore import QVariant
-            tipo_campo = {
-                "object":  QVariant.String,
-                "int64":   QVariant.LongLong,
-                "float64": QVariant.Double,
-                "bool":    QVariant.Bool,
-            }
-
-        # Qt5/Qt6 compat: QgsVectorFileWriter error code
-        try:
-            _WRITER_NO_ERROR = QgsVectorFileWriter.WriterError.NoError  # QGIS 4
-        except AttributeError:
-            _WRITER_NO_ERROR = QgsVectorFileWriter.NoError               # QGIS 3
+        def _to_py(v):
+            if v is None or v is _pd.NA or v is _pd.NaT:
+                return None
+            if hasattr(v, "item"):
+                v = v.item()
+            if isinstance(v, float) and math.isnan(v):
+                return None
+            return v
 
         df_geo = df.dropna(subset=["longitude", "latitude"])
-        _default_type = tipo_campo["object"]
-        nome_layer = "ANNCSU_indirizzi"
-        layer = QgsVectorLayer("Point?crs=EPSG:4326", nome_layer, "memory")
-        pr    = layer.dataProvider()
-        cols  = [c for c in df_geo.columns if c not in ("longitude", "latitude")]
-        pr.addAttributes([
-            QgsField(c, tipo_campo.get(str(df_geo[c].dtype), _default_type))
-            for c in cols
-        ])
-        layer.updateFields()
+        if df_geo.empty:
+            raise Exception(
+                f"Nessuna riga con coordinate valide.\n"
+                f"Righe totali: {len(df)}, con lat/lon: {len(df_geo)}"
+            )
 
-        total    = len(df_geo)
-        step     = max(1, total // 20)
-        features = []
+        cols = [c for c in df_geo.columns if c not in ("longitude", "latitude")]
+
+        # Crea GeoPackage via OGR (sempre disponibile in QGIS)
+        import os
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+
+        driver = ogr.GetDriverByName("GPKG")
+        ds = driver.CreateDataSource(self.output_path)
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(4326)
+        lyr = ds.CreateLayer("ANNCSU_indirizzi", srs, ogr.wkbPoint)
+
+        # Mappa dtype → (OGR type, Python cast)
+        ftypes = []
+        for c in cols:
+            s = str(df_geo[c].dtype).lower()
+            if "bool" in s:
+                ftypes.append((ogr.OFTInteger, lambda v: int(bool(v))))
+            elif "int" in s:
+                ftypes.append((ogr.OFTInteger64, int))
+            elif "float" in s:
+                ftypes.append((ogr.OFTReal, float))
+            else:
+                ftypes.append((ogr.OFTString, str))
+            lyr.CreateField(ogr.FieldDefn(c, ftypes[-1][0]))
+
+        defn  = lyr.GetLayerDefn()
+        total = len(df_geo)
+        step  = max(1, total // 20)
+        n     = 0
         for i, (_, row) in enumerate(df_geo.iterrows()):
             if self._cancel:
-                return 0
-            feat = QgsFeature()
-            feat.setGeometry(QgsGeometry.fromPointXY(
-                QgsPointXY(row["longitude"], row["latitude"])
-            ))
-            feat.setAttributes([
-                None if (v is None or (isinstance(v, float) and math.isnan(v))) else v
-                for v in (row[c] for c in cols)
-            ])
-            features.append(feat)
+                break
+            feat = ogr.Feature(defn)
+            pt = ogr.Geometry(ogr.wkbPoint)
+            pt.AddPoint(float(row["longitude"]), float(row["latitude"]))
+            feat.SetGeometry(pt)
+            for j, c in enumerate(cols):
+                v = _to_py(row[c])
+                if v is not None:
+                    _, cast = ftypes[j]
+                    feat.SetField(j, cast(v))
+            lyr.CreateFeature(feat)
+            n += 1
             if i % step == 0:
                 self.progresso.emit(55 + int(i / total * 35), f"Feature {i:,}/{total:,}...")
 
-        pr.addFeatures(features)
-        layer.updateExtents()
-
-        options = QgsVectorFileWriter.SaveVectorOptions()
-        options.driverName   = "GPKG"
-        options.fileEncoding = "UTF-8"
-        options.layerName    = nome_layer
-
-        # writeAsVectorFormatV3 (QGIS 3.20+/4.x) restituisce (err, msg, newfile, newlayer)
-        # writeAsVectorFormatV2 (QGIS 3.10-3.x) restituisce (err, msg)
-        if hasattr(QgsVectorFileWriter, "writeAsVectorFormatV3"):
-            result = QgsVectorFileWriter.writeAsVectorFormatV3(
-                layer, self.output_path,
-                QgsProject.instance().transformContext(), options
-            )
-            err, msg = result[0], result[1]
-        else:
-            err, msg = QgsVectorFileWriter.writeAsVectorFormatV2(
-                layer, self.output_path,
-                QgsProject.instance().transformContext(), options
-            )
-
-        if err != _WRITER_NO_ERROR:
-            raise Exception(f"Errore GeoPackage: {msg}")
-        return len(features)
+        ds.FlushCache()
+        ds = None
+        return n
 
     # =========================================================================
     # RICERCA INDIRIZZO
