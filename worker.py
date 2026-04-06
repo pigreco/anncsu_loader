@@ -284,21 +284,36 @@ class AnncsuWorker(QThread):
         con = duckdb.connect()
 
         condizioni = []
+        params = []
         if self.cerca_comune:
-            condizioni.append(f"UPPER(NOME_COMUNE) LIKE '%{self.cerca_comune}%'")
+            condizioni.append("UPPER(NOME_COMUNE) LIKE $" + str(len(params) + 1))
+            params.append(f"%{self.cerca_comune.upper()}%")
         if self.cerca_via:
             condizioni.append(
-                f"(UPPER(DIZIONE_LINGUA1) LIKE '%{self.cerca_via}%' "
-                f"OR UPPER(ODONIMO) LIKE '%{self.cerca_via}%')"
+                "(UPPER(DIZIONE_LINGUA1) LIKE $" + str(len(params) + 1) +
+                " OR UPPER(ODONIMO) LIKE $" + str(len(params) + 1) + ")"
             )
+            params.append(f"%{self.cerca_via.upper()}%")
         if self.cerca_civico:
             try:
                 n = int(self.cerca_civico)
-                condizioni.append(f"CIVICO = {n}")
+                condizioni.append("CIVICO = $" + str(len(params) + 1))
+                params.append(n)
             except ValueError:
-                condizioni.append(f"UPPER(CAST(CIVICO AS VARCHAR)) LIKE '%{self.cerca_civico.upper()}%'")
+                condizioni.append("UPPER(CAST(CIVICO AS VARCHAR)) LIKE $" + str(len(params) + 1))
+                params.append(f"%{self.cerca_civico.upper()}%")
 
         where = ("WHERE " + " AND ".join(condizioni)) if condizioni else ""
+
+        order_parts = []
+        if self.cerca_comune:
+            v = self.cerca_comune.upper().replace("'", "''")
+            order_parts.append(f"CASE WHEN UPPER(NOME_COMUNE) LIKE '{v}%' THEN 0 ELSE 1 END")
+        if self.cerca_via:
+            v = self.cerca_via.upper().replace("'", "''")
+            order_parts.append(f"CASE WHEN UPPER(DIZIONE_LINGUA1) LIKE '{v}%' THEN 0 ELSE 1 END")
+        order_parts += ["NOME_COMUNE", "DIZIONE_LINGUA1", "CIVICO"]
+        order_by = "ORDER BY " + ", ".join(order_parts)
 
         self.progresso.emit(50, "Esecuzione query...")
         rows = con.execute(f"""
@@ -309,8 +324,9 @@ class AnncsuWorker(QThread):
                 latitude, longitude, QUOTA, METODO
             FROM read_parquet('{parquet_unix}')
             {where}
+            {order_by}
             LIMIT {self.limite}
-        """).fetchall()
+        """, params).fetchall()
 
         cols = [
             "NOME_COMUNE","CODICE_ISTAT","ODONIMO",

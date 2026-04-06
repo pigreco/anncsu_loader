@@ -498,16 +498,25 @@ class AnncsuDialog(QDialog):
         self._aggiorna_info_comuni()
 
     def _filtra_comuni(self, testo):
-        testo = testo.upper().strip()
-        role  = _user_role()
-        for i in range(self.lista_comuni.count()):
-            item = self.lista_comuni.item(i)
-            item.setHidden(bool(testo and testo not in item.data(role).upper()))
+        testo_up = testo.upper().strip()
+        role = _user_role()
+        self.lista_comuni.clear()
+        if not testo_up:
+            filtrati = self._comuni_cache
+        else:
+            starts   = [c for c in self._comuni_cache if c[0].upper().startswith(testo_up)]
+            contains = [c for c in self._comuni_cache if testo_up in c[0].upper()
+                        and not c[0].upper().startswith(testo_up)]
+            filtrati = starts + contains
+        for nome, istat, count in filtrati:
+            item = QListWidgetItem(f"{nome}  ({istat})  —  {count:,} civici")
+            item.setData(role, nome)
+            self.lista_comuni.addItem(item)
         self._aggiorna_info_comuni()
 
     def _aggiorna_info_comuni(self):
-        tot = self.lista_comuni.count()
-        vis = sum(1 for i in range(tot) if not self.lista_comuni.item(i).isHidden())
+        tot = len(self._comuni_cache)
+        vis = self.lista_comuni.count()
         sel = len(self.lista_comuni.selectedItems())
         self.lbl_comuni_info.setText(
             f"{vis} comuni visualizzati su {tot} — {sel} selezionati"

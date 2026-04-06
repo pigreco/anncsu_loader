@@ -3,7 +3,7 @@ name=ANNCSU Loader
 qgisMinimumVersion=3.20
 qgisMaximumVersion=4.99
 description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune / Load ANNCSU addresses from local Parquet file filtered by municipality
-version=1.5
+version=1.7
 author=Salvatore Fiandaca
 email=pigrecoinfinito@gmail.com
 about=Plugin to load ANNCSU data (Italian National Archive of Civic Numbers and Urban Streets)
@@ -26,6 +26,11 @@ experimental=True
 deprecated=False
 server=False
 changelog=
+    1.7 Ricerca comuni: risultati ordinati con "inizia con" in cima rispetto a "contiene"
+        Ricerca indirizzi: query DuckDB con ORDER BY CASE per prioritizzare match "inizia con"
+        su comune e via
+    1.6 Fix SQL injection nella ricerca indirizzo: input utente ora passato come parametri bind
+        invece di essere interpolato direttamente nella query DuckDB
     1.5 Rimosso bottone 'Seleziona tutti' che bloccava il plugin con dataset di grandi dimensioni
     1.4 Fix esportazione GeoPackage: esclude colonne GEOMETRY native dal Parquet
         (non convertibili da DuckDB in pandas); riscrive _scrivi_gpkg usando

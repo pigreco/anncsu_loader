@@ -79,6 +79,16 @@ Usare il tab **Scarica** del plugin per ottenerlo, oppure scaricarlo manualmente
 
 ## Changelog
 
+### 1.7
+- Filtro comuni: i risultati sono ora ordinati con i comuni che **iniziano con** il testo cercato in cima, seguiti da quelli che lo contengono nel nome.
+- Ricerca indirizzi: la query DuckDB ordina i risultati prioritizzando i match "inizia con" su comune e via, così cercando "TOLE" nella via, "TOLEDO" compare prima di altri risultati parziali.
+
+### 1.6
+- Fix SQL injection nella ricerca indirizzo (issue #6): i campi comune, via e civico venivano interpolati direttamente nella query DuckDB con f-string. Ora vengono passati come parametri bind (`$1`, `$2`, …), eliminando crash con caratteri speciali come `'`.
+
+### 1.5
+- Rimosso bottone "Seleziona tutti" che bloccava il plugin con dataset di grandi dimensioni.
+
 ### 1.4
 - Fix esportazione GeoPackage: il Parquet ANNCSU contiene una colonna `GEOMETRY` nativa che DuckDB non riesce a convertire in pandas. La colonna viene ora esclusa automaticamente prima della fetch; la scrittura del GeoPackage usa `osgeo.ogr` (GDAL) invece del memory layer PyQGIS, eliminando i problemi di tipo con numpy/pandas nullable dtypes.
 
