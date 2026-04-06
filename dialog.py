@@ -260,15 +260,11 @@ class AnncsuDialog(QDialog):
         lay.addWidget(self.lista_comuni)
 
         hl_sel = QHBoxLayout()
-        self.btn_sel_tutti   = QPushButton("Seleziona tutti")
         self.btn_desel_tutti = QPushButton("Deseleziona tutti")
-        self.btn_sel_tutti.setFixedHeight(26)
         self.btn_desel_tutti.setFixedHeight(26)
-        self.btn_sel_tutti.setEnabled(False)
         self.btn_desel_tutti.setEnabled(False)
-        self.btn_sel_tutti.clicked.connect(self._seleziona_tutti)
         self.btn_desel_tutti.clicked.connect(self._deseleziona_tutti)
-        hl_sel.addWidget(self.btn_sel_tutti)
+        hl_sel.addStretch()
         hl_sel.addWidget(self.btn_desel_tutti)
         lay.addLayout(hl_sel)
 
@@ -498,7 +494,6 @@ class AnncsuDialog(QDialog):
             self.lista_comuni.addItem(item)
         self.lista_comuni.setEnabled(True)
         self.txt_cerca.setEnabled(True)
-        self.btn_sel_tutti.setEnabled(True)
         self.btn_desel_tutti.setEnabled(True)
         self._aggiorna_info_comuni()
 
@@ -520,12 +515,6 @@ class AnncsuDialog(QDialog):
         self.btn_esegui.setEnabled(sel > 0)
         self._aggiorna_preview_output()
 
-    def _seleziona_tutti(self):
-        for i in range(self.lista_comuni.count()):
-            item = self.lista_comuni.item(i)
-            if not item.isHidden():
-                item.setSelected(True)
-
     def _deseleziona_tutti(self):
         self.lista_comuni.clearSelection()
 
@@ -534,7 +523,6 @@ class AnncsuDialog(QDialog):
         self.lista_comuni.setEnabled(False)
         self.txt_cerca.setEnabled(False)
         self.txt_cerca.clear()
-        self.btn_sel_tutti.setEnabled(False)
         self.btn_desel_tutti.setEnabled(False)
         self.btn_esegui.setEnabled(False)
         self.lbl_comuni_info.setText("Prima carica i comuni con il pulsante in alto")
