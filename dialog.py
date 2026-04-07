@@ -68,6 +68,7 @@ class AnncsuDialog(QDialog):
     SETTINGS_KEY_PARQUET    = "anncsu_loader/parquet_path"
     SETTINGS_KEY_OUTPUT_DIR = "anncsu_loader/output_dir"
     ANNCSU_URL = "https://github.com/anncsu-open/anncsu-viewer/raw/main/data/anncsu-indirizzi.parquet"
+    ISTAT_URL  = "https://github.com/anncsu-open/anncsu-viewer/raw/main/data/istat-boundaries.parquet"
 
     def __init__(self, iface, parent=None):
         super().__init__(parent or iface.mainWindow())
@@ -76,6 +77,7 @@ class AnncsuDialog(QDialog):
         self.settings      = QSettings()
         self._comuni_cache = []
         self._marker       = None   # QgsVertexMarker sulla mappa
+        self._download_istat_pending = False
 
         self.setWindowTitle("ANNCSU — Loader")
         self.setMinimumWidth(560)
@@ -189,6 +191,14 @@ class AnncsuDialog(QDialog):
         self.txt_nome_file = QLineEdit("anncsu-indirizzi.parquet")
         form.addRow("Nome file:", self.txt_nome_file)
         lay.addLayout(form)
+
+        self.chk_scarica_istat = QCheckBox(
+            "Scarica anche i confini ISTAT dei comuni (istat-boundaries.parquet)"
+        )
+        self.chk_scarica_istat.setToolTip(
+            f"Scarica in aggiunta il file dei confini amministrativi comunali\n{self.ISTAT_URL}"
+        )
+        lay.addWidget(self.chk_scarica_istat)
 
         self.lbl_download_path = QLabel("")
         self.lbl_download_path.setStyleSheet("font-size: 11px; color: palette(highlight);")
@@ -441,7 +451,8 @@ class AnncsuDialog(QDialog):
             if r != _MSGBOX_YES:
                 return
 
-        self._set_ui_occupata(True, "Download in corso...")
+        self._download_istat_pending = self.chk_scarica_istat.isChecked()
+        self._set_ui_occupata(True, "Download ANNCSU in corso...")
 
         from .worker import AnncsuWorker
         self.worker = AnncsuWorker(
@@ -456,10 +467,37 @@ class AnncsuDialog(QDialog):
 
     def _on_download_completato(self, path: str, n: int):
         self.progress_bar.setValue(100)
+
+        if self._download_istat_pending:
+            self._download_istat_pending = False
+            self._imposta_parquet(path)
+            # Disconnette finished del primo worker per evitare reset prematuro della UI
+            try:
+                self.worker.finished.disconnect()
+            except Exception:
+                pass
+
+            dest_dir  = os.path.dirname(path)
+            istat_path = os.path.join(dest_dir, "istat-boundaries.parquet")
+            self.lbl_stato.setText("ANNCSU scaricato. Avvio download confini ISTAT...")
+
+            from .worker import AnncsuWorker
+            self.worker = AnncsuWorker(
+                "", AnncsuWorker.MODE_DOWNLOAD,
+                output_path=istat_path, url=self.ISTAT_URL
+            )
+            self.worker.progresso.connect(self._on_progresso)
+            self.worker.completato.connect(self._on_download_completato)
+            self.worker.errore.connect(self._on_errore)
+            self.worker.finished.connect(lambda: self._set_ui_occupata(False))
+            self._set_ui_occupata(True, "Download ISTAT in corso...")
+            self.worker.start()
+            return
+
         self.lbl_stato.setText(f"✓ Download completato: {path}")
         QMessageBox.information(
             self, "Download completato",
-            f"File scaricato in:\n{path}\n\nVuoi impostarlo come file sorgente?"
+            f"File scaricato in:\n{path}"
         )
         self._imposta_parquet(path)
 
