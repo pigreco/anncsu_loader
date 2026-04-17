@@ -73,11 +73,18 @@ Cerca indirizzi per comune, via e/o numero civico. I risultati vengono mostrati 
 ## File Parquet ANNCSU
 
 Il dataset è disponibile su:
-`https://github.com/anncsu-open/anncsu-viewer/raw/main/data/anncsu-indirizzi.parquet`
+`https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/anncsu-indirizzi.parquet`
 
 Usare il tab **Scarica** del plugin per ottenerlo, oppure scaricarlo manualmente e puntare al file con **Sfoglia**.
 
 ## Changelog
+
+### 1.8
+- Aggiornati URL sorgente ANNCSU e confini ISTAT al nuovo repository `quattochiacchiereinquattro/anncus`.
+- Gestione file esistente: download avvisa e blocca se il file esiste già; export offre di caricare il file esistente in QGIS.
+- Prefisso `anncsu_` / `istat_` sul file esportato in base al nome del parquet sorgente.
+- Export ANNCSU in formato Parquet ora produce un **GeoParquet** con geometria punto (OGR Parquet driver), evitando il caricamento errato come poligoni ISTAT.
+- Credits [gbvitrano](https://github.com/gbvitrano) / [Geobeyond Srl](https://www.geobeyond.it/) nel tab Scarica.
 
 ### 1.7
 - Filtro comuni: i risultati sono ora ordinati con i comuni che **iniziano con** il testo cercato in cima, seguiti da quelli che lo contengono nel nome.
