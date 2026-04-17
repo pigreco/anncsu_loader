@@ -171,9 +171,15 @@ class AnncsuWorker(QThread):
 
         if self.fmt == "parquet":
             self.progresso.emit(50, "Scrittura Parquet...")
+            rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")
+            safe_cols = [
+                col for col, dtype in zip(rel.columns, rel.dtypes)
+                if "GEOMETRY" not in str(dtype).upper()
+            ]
+            col_list = ", ".join(f'"{c}"' for c in safe_cols)
             con.execute(f"""
                 COPY (
-                    SELECT * FROM read_parquet('{parquet_unix}') {filtro}
+                    SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}
                 ) TO '{output_unix}' (FORMAT PARQUET)
             """)
             self.progresso.emit(100, "Completato.")
