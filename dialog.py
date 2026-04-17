@@ -443,13 +443,11 @@ class AnncsuDialog(QDialog):
 
         dest_path = os.path.join(dest_dir, nome_file)
         if os.path.exists(dest_path):
-            r = QMessageBox.question(
+            QMessageBox.warning(
                 self, "File esistente",
-                f"Il file esiste già:\n{dest_path}\nSovrascrivere?",
-                _MSGBOX_YES | _MSGBOX_NO
+                f"Il file esiste già:\n{dest_path}\n\nRinomina o elimina il file prima di procedere."
             )
-            if r != _MSGBOX_YES:
-                return
+            return
 
         self._download_istat_pending = self.chk_scarica_istat.isChecked()
         self._set_ui_occupata(True, "Download ANNCSU in corso...")
@@ -480,14 +478,12 @@ class AnncsuDialog(QDialog):
             dest_dir  = os.path.dirname(path)
             istat_path = os.path.join(dest_dir, "istat-boundaries.parquet")
             if os.path.exists(istat_path):
-                r = QMessageBox.question(
+                QMessageBox.warning(
                     self, "File esistente",
-                    f"Il file esiste già:\n{istat_path}\nSovrascrivere?",
-                    _MSGBOX_YES | _MSGBOX_NO
+                    f"Il file esiste già:\n{istat_path}\n\nRinomina o elimina il file prima di procedere."
                 )
-                if r != _MSGBOX_YES:
-                    self._set_ui_occupata(False)
-                    return
+                self._set_ui_occupata(False)
+                return
             self.lbl_stato.setText("ANNCSU scaricato. Avvio download confini ISTAT...")
 
             from .worker import AnncsuWorker
@@ -627,13 +623,11 @@ class AnncsuDialog(QDialog):
         output_path = self.lbl_output_path.text()
         fmt = "parquet" if self.cmb_formato.currentIndex() == 0 else "gpkg"
         if os.path.exists(output_path):
-            r = QMessageBox.question(
+            QMessageBox.warning(
                 self, "File esistente",
-                f"Il file esiste già:\n{output_path}\nSovrascrivere?",
-                _MSGBOX_YES | _MSGBOX_NO
+                f"Il file esiste già:\n{output_path}\n\nRinomina o elimina il file prima di procedere."
             )
-            if r != _MSGBOX_YES:
-                return
+            return
         self._set_ui_occupata(True, "Esportazione in corso...")
 
         from .worker import AnncsuWorker
