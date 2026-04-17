@@ -607,7 +607,14 @@ class AnncsuDialog(QDialog):
         else:
             tag = "COMUNI"
         ext = ".parquet" if self.cmb_formato.currentIndex() == 0 else ".gpkg"
-        self.lbl_output_path.setText(os.path.join(cartella, f"ANNCSU_{tag}{ext}"))
+        src_name = os.path.basename(parquet).lower()
+        if src_name.startswith("istat"):
+            prefisso = "istat_"
+        elif src_name.startswith("anncsu"):
+            prefisso = "anncsu_"
+        else:
+            prefisso = "ANNCSU_"
+        self.lbl_output_path.setText(os.path.join(cartella, f"{prefisso}{tag}{ext}"))
 
     def _comuni_selezionati(self) -> list:
         role = _user_role()
@@ -657,9 +664,18 @@ class AnncsuDialog(QDialog):
         )
 
     def _carica_in_qgis(self, path: str):
-        nome = os.path.splitext(os.path.basename(path))[0]
-        ext  = os.path.splitext(path)[1].lower()
-        uri  = f"{path}|layername=ANNCSU_indirizzi" if ext == ".gpkg" else path
+        nome     = os.path.splitext(os.path.basename(path))[0]
+        ext      = os.path.splitext(path)[1].lower()
+        basename = os.path.basename(path).lower()
+        if ext == ".gpkg":
+            uri = f"{path}|layername=ANNCSU_indirizzi"
+        elif basename.startswith("anncsu_"):
+            uri = (f"{path}"
+                   "|option:X_POSSIBLE_NAMES=longitude"
+                   "|option:Y_POSSIBLE_NAMES=latitude"
+                   "|option:KEEP_GEOM_COLUMNS=NO")
+        else:
+            uri = path
         layer = QgsVectorLayer(uri, nome, "ogr")
         if layer.isValid():
             QgsProject.instance().addMapLayer(layer)
