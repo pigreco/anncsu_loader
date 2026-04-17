@@ -169,6 +169,9 @@ class AnncsuWorker(QThread):
 
         output_unix = self.output_path.replace("\\", "/")
 
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+
         if self.fmt == "parquet":
             self.progresso.emit(50, "Scrittura Parquet...")
             con.execute(f"""
