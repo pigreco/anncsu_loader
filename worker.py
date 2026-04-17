@@ -112,6 +112,7 @@ class AnncsuWorker(QThread):
         dest_dir = os.path.dirname(self.output_path)
         if dest_dir:
             os.makedirs(dest_dir, exist_ok=True)
+        self._rimuovi_se_esiste(self.output_path)
         content = bytes(req.reply().content())
         with open(self.output_path, "wb") as f:
             f.write(content)
@@ -119,6 +120,17 @@ class AnncsuWorker(QThread):
         size_mb = os.path.getsize(self.output_path) / 1024 / 1024
         self.progresso.emit(100, f"✓ Scaricato ({size_mb:.1f} MB)")
         self.completato.emit(self.output_path, 0)
+
+    def _rimuovi_se_esiste(self, path):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+            except PermissionError:
+                nome = os.path.basename(path)
+                raise PermissionError(
+                    f"Impossibile sovrascrivere '{nome}': il file è aperto da un altro processo.\n"
+                    "Chiudi o rimuovi il layer in QGIS prima di procedere."
+                )
 
     def _on_download_progress(self, received, total):
         if total > 0:
@@ -169,8 +181,7 @@ class AnncsuWorker(QThread):
 
         output_unix = self.output_path.replace("\\", "/")
 
-        if os.path.exists(self.output_path):
-            os.remove(self.output_path)
+        self._rimuovi_se_esiste(self.output_path)
 
         if self.fmt == "parquet":
             self.progresso.emit(50, "Scrittura Parquet...")
