@@ -67,7 +67,8 @@ class AnncsuDialog(QDialog):
 
     SETTINGS_KEY_PARQUET    = "anncsu_loader/parquet_path"
     SETTINGS_KEY_OUTPUT_DIR = "anncsu_loader/output_dir"
-    ANNCSU_URL = "https://github.com/anncsu-open/anncsu-viewer/raw/main/data/anncsu-indirizzi.parquet"
+    ANNCSU_URL = "https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/anncsu-indirizzi.parquet"
+    ISTAT_URL  = "https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/istat-boundaries.parquet"
 
     def __init__(self, iface, parent=None):
         super().__init__(parent or iface.mainWindow())
@@ -76,6 +77,7 @@ class AnncsuDialog(QDialog):
         self.settings      = QSettings()
         self._comuni_cache = []
         self._marker       = None   # QgsVertexMarker sulla mappa
+        self._download_istat_pending = False
 
         self.setWindowTitle("ANNCSU — Loader")
         self.setMinimumWidth(560)
@@ -190,6 +192,14 @@ class AnncsuDialog(QDialog):
         form.addRow("Nome file:", self.txt_nome_file)
         lay.addLayout(form)
 
+        self.chk_scarica_istat = QCheckBox(
+            "Scarica anche i confini ISTAT dei comuni (istat-boundaries.parquet)"
+        )
+        self.chk_scarica_istat.setToolTip(
+            f"Scarica in aggiunta il file dei confini amministrativi comunali\n{self.ISTAT_URL}"
+        )
+        lay.addWidget(self.chk_scarica_istat)
+
         self.lbl_download_path = QLabel("")
         self.lbl_download_path.setStyleSheet("font-size: 11px; color: palette(highlight);")
         self.lbl_download_path.setWordWrap(True)
@@ -226,6 +236,28 @@ class AnncsuDialog(QDialog):
         lbl_pnrr.setOpenExternalLinks(True)
         lbl_pnrr.setWordWrap(True)
         lay.addWidget(lbl_pnrr)
+
+        sep2 = QFrame()
+        sep2.setFrameShape(_FRAME_HLINE)
+        sep2.setFrameShadow(_FRAME_SUNKEN)
+        lay.addWidget(sep2)
+
+        lbl_credits = QLabel(
+            '<p align="center" style="font-size:11px;">'
+            'I file parquet sono realizzati da '
+            '<a href="https://github.com/gbvitrano">gbvitrano</a>'
+            ' sfruttando gli script di '
+            '<a href="https://www.geobeyond.it/">Geobeyond Srl</a>'
+            ' a partire dai singoli file csv presenti qui '
+            '<a href="https://www.anncsu.gov.it/it/consultazione-dellarchivio/open-data/'
+            'Accedi-ai-servizi-di-dowload-massivo-in-Open-data/">'
+            'anncsu.gov.it</a>'
+            '</p>'
+        )
+        lbl_credits.setTextFormat(_TEXT_RICH)
+        lbl_credits.setOpenExternalLinks(True)
+        lbl_credits.setWordWrap(True)
+        lay.addWidget(lbl_credits)
 
         lay.addStretch()
         self._aggiorna_preview_download()
@@ -433,15 +465,14 @@ class AnncsuDialog(QDialog):
 
         dest_path = os.path.join(dest_dir, nome_file)
         if os.path.exists(dest_path):
-            r = QMessageBox.question(
+            QMessageBox.warning(
                 self, "File esistente",
-                f"Il file esiste già:\n{dest_path}\nSovrascrivere?",
-                _MSGBOX_YES | _MSGBOX_NO
+                f"Il file esiste già:\n{dest_path}\n\nRinomina o elimina il file prima di procedere."
             )
-            if r != _MSGBOX_YES:
-                return
+            return
 
-        self._set_ui_occupata(True, "Download in corso...")
+        self._download_istat_pending = self.chk_scarica_istat.isChecked()
+        self._set_ui_occupata(True, "Download ANNCSU in corso...")
 
         from .worker import AnncsuWorker
         self.worker = AnncsuWorker(
@@ -456,10 +487,44 @@ class AnncsuDialog(QDialog):
 
     def _on_download_completato(self, path: str, n: int):
         self.progress_bar.setValue(100)
+
+        if self._download_istat_pending:
+            self._download_istat_pending = False
+            self._imposta_parquet(path)
+            # Disconnette finished del primo worker per evitare reset prematuro della UI
+            try:
+                self.worker.finished.disconnect()
+            except Exception:
+                pass
+
+            dest_dir  = os.path.dirname(path)
+            istat_path = os.path.join(dest_dir, "istat-boundaries.parquet")
+            if os.path.exists(istat_path):
+                QMessageBox.warning(
+                    self, "File esistente",
+                    f"Il file esiste già:\n{istat_path}\n\nRinomina o elimina il file prima di procedere."
+                )
+                self._set_ui_occupata(False)
+                return
+            self.lbl_stato.setText("ANNCSU scaricato. Avvio download confini ISTAT...")
+
+            from .worker import AnncsuWorker
+            self.worker = AnncsuWorker(
+                "", AnncsuWorker.MODE_DOWNLOAD,
+                output_path=istat_path, url=self.ISTAT_URL
+            )
+            self.worker.progresso.connect(self._on_progresso)
+            self.worker.completato.connect(self._on_download_completato)
+            self.worker.errore.connect(self._on_errore)
+            self.worker.finished.connect(lambda: self._set_ui_occupata(False))
+            self._set_ui_occupata(True, "Download ISTAT in corso...")
+            self.worker.start()
+            return
+
         self.lbl_stato.setText(f"✓ Download completato: {path}")
         QMessageBox.information(
             self, "Download completato",
-            f"File scaricato in:\n{path}\n\nVuoi impostarlo come file sorgente?"
+            f"File scaricato in:\n{path}"
         )
         self._imposta_parquet(path)
 
@@ -564,7 +629,14 @@ class AnncsuDialog(QDialog):
         else:
             tag = "COMUNI"
         ext = ".parquet" if self.cmb_formato.currentIndex() == 0 else ".gpkg"
-        self.lbl_output_path.setText(os.path.join(cartella, f"ANNCSU_{tag}{ext}"))
+        src_name = os.path.basename(parquet).lower()
+        if src_name.startswith("istat"):
+            prefisso = "istat_"
+        elif src_name.startswith("anncsu"):
+            prefisso = "anncsu_"
+        else:
+            prefisso = "ANNCSU_"
+        self.lbl_output_path.setText(os.path.join(cartella, f"{prefisso}{tag}{ext}"))
 
     def _comuni_selezionati(self) -> list:
         role = _user_role()
@@ -579,6 +651,15 @@ class AnncsuDialog(QDialog):
 
         output_path = self.lbl_output_path.text()
         fmt = "parquet" if self.cmb_formato.currentIndex() == 0 else "gpkg"
+        if os.path.exists(output_path):
+            r = QMessageBox.question(
+                self, "File esistente",
+                f"Il file esiste già:\n{output_path}\n\nVuoi caricarlo in QGIS?",
+                _MSGBOX_YES | _MSGBOX_NO
+            )
+            if r == _MSGBOX_YES:
+                self._carica_in_qgis(output_path)
+            return
         self._set_ui_occupata(True, "Esportazione in corso...")
 
         from .worker import AnncsuWorker
