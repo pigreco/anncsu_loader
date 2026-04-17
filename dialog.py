@@ -67,8 +67,8 @@ class AnncsuDialog(QDialog):
 
     SETTINGS_KEY_PARQUET    = "anncsu_loader/parquet_path"
     SETTINGS_KEY_OUTPUT_DIR = "anncsu_loader/output_dir"
-    ANNCSU_URL = "https://github.com/anncsu-open/anncsu-viewer/raw/main/data/anncsu-indirizzi.parquet"
-    ISTAT_URL  = "https://github.com/anncsu-open/anncsu-viewer/raw/main/data/istat-boundaries.parquet"
+    ANNCSU_URL = "https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/anncsu-indirizzi.parquet"
+    ISTAT_URL  = "https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/istat-boundaries.parquet"
 
     def __init__(self, iface, parent=None):
         super().__init__(parent or iface.mainWindow())
