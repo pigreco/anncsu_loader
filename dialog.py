@@ -237,6 +237,29 @@ class AnncsuDialog(QDialog):
         lbl_pnrr.setWordWrap(True)
         lay.addWidget(lbl_pnrr)
 
+        sep2 = QFrame()
+        sep2.setFrameShape(_FRAME_HLINE)
+        sep2.setFrameShadow(_FRAME_SUNKEN)
+        sep2.setStyleSheet("background-color: #c0392b;")
+        lay.addWidget(sep2)
+
+        lbl_credits = QLabel(
+            '<p style="font-size:11px; color:#c0392b; font-style:italic;">'
+            'I file parquet sono realizzati da '
+            '<a href="https://github.com/gbvitrano" style="color:#c0392b;">gbvitrano</a>'
+            ' sfruttando gli script di '
+            '<a href="https://www.geobeyond.it/" style="color:#c0392b;">Geobeyond Srl</a>'
+            ' a partire dai singoli file csv presenti qui '
+            '<a href="https://www.anncsu.gov.it/it/consultazione-dellarchivio/open-data/'
+            'Accedi-ai-servizi-di-dowload-massivo-in-Open-data/" style="color:#c0392b;">'
+            'anncsu.gov.it</a>'
+            '</p>'
+        )
+        lbl_credits.setTextFormat(_TEXT_RICH)
+        lbl_credits.setOpenExternalLinks(True)
+        lbl_credits.setWordWrap(True)
+        lay.addWidget(lbl_credits)
+
         lay.addStretch()
         self._aggiorna_preview_download()
         return w
