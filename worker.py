@@ -170,24 +170,38 @@ class AnncsuWorker(QThread):
         output_unix = self.output_path.replace("\\", "/")
 
         if self.fmt == "parquet":
-            self.progresso.emit(50, "Scrittura Parquet...")
-            rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")
             src_name = os.path.basename(parquet_unix).lower()
             if src_name.startswith("anncsu"):
+                self.progresso.emit(35, "Lettura dati in memoria...")
+                rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")
                 safe_cols = [
                     col for col, dtype in zip(rel.columns, rel.dtypes)
                     if "GEOMETRY" not in str(dtype).upper()
                 ]
                 col_list = ", ".join(f'"{c}"' for c in safe_cols)
+                df = con.execute(
+                    f"SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}"
+                ).fetchdf()
+                if "latitude" not in df.columns or "longitude" not in df.columns:
+                    raise Exception(
+                        f"Colonne coordinate non trovate nel Parquet.\n"
+                        f"Colonne disponibili: {list(df.columns)}"
+                    )
+                if self._cancel:
+                    return
+                self.progresso.emit(55, "Costruzione layer vettoriale...")
+                n = self._scrivi_parquet_anncsu(df)
+                self.progresso.emit(100, "GeoParquet salvato.")
+                self.completato.emit(self.output_path, n)
             else:
-                col_list = "*"
-            con.execute(f"""
-                COPY (
-                    SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}
-                ) TO '{output_unix}' (FORMAT PARQUET)
-            """)
-            self.progresso.emit(100, "Completato.")
-            self.completato.emit(self.output_path, n_tot)
+                self.progresso.emit(50, "Scrittura Parquet...")
+                con.execute(f"""
+                    COPY (
+                        SELECT * FROM read_parquet('{parquet_unix}') {filtro}
+                    ) TO '{output_unix}' (FORMAT PARQUET)
+                """)
+                self.progresso.emit(100, "Completato.")
+                self.completato.emit(self.output_path, n_tot)
 
         elif self.fmt == "gpkg":
             self.progresso.emit(35, "Lettura dati in memoria...")
@@ -247,6 +261,80 @@ class AnncsuWorker(QThread):
         lyr = ds.CreateLayer("ANNCSU_indirizzi", srs, ogr.wkbPoint)
 
         # Mappa dtype → (OGR type, Python cast)
+        ftypes = []
+        for c in cols:
+            s = str(df_geo[c].dtype).lower()
+            if "bool" in s:
+                ftypes.append((ogr.OFTInteger, lambda v: int(bool(v))))
+            elif "int" in s:
+                ftypes.append((ogr.OFTInteger64, int))
+            elif "float" in s:
+                ftypes.append((ogr.OFTReal, float))
+            else:
+                ftypes.append((ogr.OFTString, str))
+            lyr.CreateField(ogr.FieldDefn(c, ftypes[-1][0]))
+
+        defn  = lyr.GetLayerDefn()
+        total = len(df_geo)
+        step  = max(1, total // 20)
+        n     = 0
+        for i, (_, row) in enumerate(df_geo.iterrows()):
+            if self._cancel:
+                break
+            feat = ogr.Feature(defn)
+            pt = ogr.Geometry(ogr.wkbPoint)
+            pt.AddPoint(float(row["longitude"]), float(row["latitude"]))
+            feat.SetGeometry(pt)
+            for j, c in enumerate(cols):
+                v = _to_py(row[c])
+                if v is not None:
+                    _, cast = ftypes[j]
+                    feat.SetField(j, cast(v))
+            lyr.CreateFeature(feat)
+            n += 1
+            if i % step == 0:
+                self.progresso.emit(55 + int(i / total * 35), f"Feature {i:,}/{total:,}...")
+
+        ds.FlushCache()
+        ds = None
+        return n
+
+    def _scrivi_parquet_anncsu(self, df) -> int:
+        import pandas as _pd
+        from osgeo import ogr, osr
+
+        def _to_py(v):
+            if v is None or v is _pd.NA or v is _pd.NaT:
+                return None
+            if hasattr(v, "item"):
+                v = v.item()
+            if isinstance(v, float) and math.isnan(v):
+                return None
+            return v
+
+        df_geo = df.dropna(subset=["longitude", "latitude"])
+        if df_geo.empty:
+            raise Exception(
+                f"Nessuna riga con coordinate valide.\n"
+                f"Righe totali: {len(df)}, con lat/lon: {len(df_geo)}"
+            )
+
+        cols = [c for c in df_geo.columns if c not in ("longitude", "latitude")]
+
+        if os.path.exists(self.output_path):
+            os.remove(self.output_path)
+
+        driver = ogr.GetDriverByName("Parquet")
+        if driver is None:
+            raise Exception(
+                "Driver OGR 'Parquet' non disponibile (richiede GDAL 3.5+).\n"
+                "Usa il formato GeoPackage."
+            )
+        ds = driver.CreateDataSource(self.output_path)
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(4326)
+        lyr = ds.CreateLayer("ANNCSU_indirizzi", srs, ogr.wkbPoint)
+
         ftypes = []
         for c in cols:
             s = str(df_geo[c].dtype).lower()
