@@ -623,10 +623,13 @@ class AnncsuDialog(QDialog):
         output_path = self.lbl_output_path.text()
         fmt = "parquet" if self.cmb_formato.currentIndex() == 0 else "gpkg"
         if os.path.exists(output_path):
-            QMessageBox.warning(
+            r = QMessageBox.question(
                 self, "File esistente",
-                f"Il file esiste già:\n{output_path}\n\nRinomina o elimina il file prima di procedere."
+                f"Il file esiste già:\n{output_path}\n\nVuoi caricarlo in QGIS?",
+                _MSGBOX_YES | _MSGBOX_NO
             )
+            if r == _MSGBOX_YES:
+                self._carica_in_qgis(output_path)
             return
         self._set_ui_occupata(True, "Esportazione in corso...")
 
