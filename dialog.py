@@ -659,29 +659,8 @@ class AnncsuDialog(QDialog):
     def _carica_in_qgis(self, path: str):
         nome = os.path.splitext(os.path.basename(path))[0]
         ext  = os.path.splitext(path)[1].lower()
-
-        if ext == ".gpkg":
-            uri = f"{path}|layername=ANNCSU_indirizzi"
-            layer = QgsVectorLayer(uri, nome, "ogr")
-        elif ext == ".parquet":
-            path_unix = path.replace("\\", "/")
-            vrt_path = os.path.splitext(path)[0] + ".vrt"
-            vrt = (
-                f'<OGRVRTDataSource>'
-                f'<OGRVRTLayer name="{nome}">'
-                f'<SrcDataSource>{path_unix}</SrcDataSource>'
-                f'<GeometryType>wkbPoint</GeometryType>'
-                f'<LayerSRS>EPSG:4326</LayerSRS>'
-                f'<GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>'
-                f'</OGRVRTLayer>'
-                f'</OGRVRTDataSource>'
-            )
-            with open(vrt_path, "w", encoding="utf-8") as f:
-                f.write(vrt)
-            layer = QgsVectorLayer(vrt_path, nome, "ogr")
-        else:
-            layer = QgsVectorLayer(path, nome, "ogr")
-
+        uri  = f"{path}|layername=ANNCSU_indirizzi" if ext == ".gpkg" else path
+        layer = QgsVectorLayer(uri, nome, "ogr")
         if layer.isValid():
             QgsProject.instance().addMapLayer(layer)
             self.iface.zoomToActiveLayer()
