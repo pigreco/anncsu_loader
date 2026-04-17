@@ -243,7 +243,7 @@ class AnncsuDialog(QDialog):
         lay.addWidget(sep2)
 
         lbl_credits = QLabel(
-            '<p style="font-size:11px;">'
+            '<p align="center" style="font-size:11px;">'
             'I file parquet sono realizzati da '
             '<a href="https://github.com/gbvitrano">gbvitrano</a>'
             ' sfruttando gli script di '
