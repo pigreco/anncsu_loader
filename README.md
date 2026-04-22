@@ -73,11 +73,18 @@ Cerca indirizzi per comune, via e/o numero civico. I risultati vengono mostrati 
 ## File Parquet ANNCSU
 
 Il dataset è disponibile su:
-`https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/anncsu-indirizzi.parquet`
+- Indirizzi: `https://gbvitrano.it/anncus/data/anncsu-indirizzi.parquet`
+- Confini ISTAT: `https://gbvitrano.it/anncus/data/istat-boundaries.parquet`
 
 Usare il tab **Scarica** del plugin per ottenerlo, oppure scaricarlo manualmente e puntare al file con **Sfoglia**.
 
+Gli URL sono centralizzati in `urls.py` nella root del plugin: per aggiornarli basta modificare le due costanti in quel file.
+
 ## Changelog
+
+### 1.9
+- URL di download (`ANNCSU_URL`, `ISTAT_URL`) spostati in `urls.py` nella root del plugin per facilitarne la manutenzione senza toccare il codice principale.
+- Aggiornati URL al dominio `gbvitrano.it`.
 
 ### 1.8
 - Aggiornati URL sorgente ANNCSU e confini ISTAT al nuovo repository `quattochiacchiereinquattro/anncus`.

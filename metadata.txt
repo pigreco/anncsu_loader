@@ -3,7 +3,7 @@ name=ANNCSU Loader
 qgisMinimumVersion=3.20
 qgisMaximumVersion=4.99
 description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune / Load ANNCSU addresses from local Parquet file filtered by municipality
-version=1.8
+version=1.9
 author=Salvatore Fiandaca
 email=pigrecoinfinito@gmail.com
 about=Plugin to load ANNCSU data (Italian National Archive of Civic Numbers and Urban Streets)
@@ -26,6 +26,8 @@ experimental=True
 deprecated=False
 server=False
 changelog=
+    1.9 URL di download spostati in urls.py per facilitarne la manutenzione
+        Aggiornati URL al dominio gbvitrano.it
     1.8 Aggiornati URL sorgente ANNCSU e confini ISTAT (nuovo repo quattochiacchiereinquattro/anncus)
         Gestione file esistente: avviso bloccante per download, offerta caricamento in QGIS per export
         Prefisso anncsu_/istat_ sul file esportato in base al parquet sorgente
