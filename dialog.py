@@ -24,6 +24,8 @@ from qgis.core import (
 )
 from qgis.gui import QgsVertexMarker, QgsRubberBand
 
+from .urls import ANNCSU_URL, ISTAT_URL
+
 
 # ── helper enum Qt5/Qt6 ───────────────────────────────────────────────────────
 
@@ -67,8 +69,6 @@ class AnncsuDialog(QDialog):
 
     SETTINGS_KEY_PARQUET    = "anncsu_loader/parquet_path"
     SETTINGS_KEY_OUTPUT_DIR = "anncsu_loader/output_dir"
-    ANNCSU_URL = "https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/anncsu-indirizzi.parquet"
-    ISTAT_URL  = "https://media.githubusercontent.com/media/quattochiacchiereinquattro/anncus/main/data/istat-boundaries.parquet"
 
     def __init__(self, iface, parent=None):
         super().__init__(parent or iface.mainWindow())
@@ -160,7 +160,7 @@ class AnncsuDialog(QDialog):
 
         lbl_info = QLabel(
             "Scarica il file Parquet ANNCSU completo dal repository ufficiale.\n"
-            f"URL: {self.ANNCSU_URL}"
+            f"URL: {ANNCSU_URL}"
         )
         lbl_info.setWordWrap(True)
         lbl_info.setStyleSheet("color: gray; font-size: 11px;")
@@ -196,7 +196,7 @@ class AnncsuDialog(QDialog):
             "Scarica anche i confini ISTAT dei comuni (istat-boundaries.parquet)"
         )
         self.chk_scarica_istat.setToolTip(
-            f"Scarica in aggiunta il file dei confini amministrativi comunali\n{self.ISTAT_URL}"
+            f"Scarica in aggiunta il file dei confini amministrativi comunali\n{ISTAT_URL}"
         )
         lay.addWidget(self.chk_scarica_istat)
 
@@ -477,7 +477,7 @@ class AnncsuDialog(QDialog):
         from .worker import AnncsuWorker
         self.worker = AnncsuWorker(
             "", AnncsuWorker.MODE_DOWNLOAD,
-            output_path=dest_path, url=self.ANNCSU_URL
+            output_path=dest_path, url=ANNCSU_URL
         )
         self.worker.progresso.connect(self._on_progresso)
         self.worker.completato.connect(self._on_download_completato)
@@ -511,7 +511,7 @@ class AnncsuDialog(QDialog):
             from .worker import AnncsuWorker
             self.worker = AnncsuWorker(
                 "", AnncsuWorker.MODE_DOWNLOAD,
-                output_path=istat_path, url=self.ISTAT_URL
+                output_path=istat_path, url=ISTAT_URL
             )
             self.worker.progresso.connect(self._on_progresso)
             self.worker.completato.connect(self._on_download_completato)
