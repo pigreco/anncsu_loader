@@ -82,6 +82,11 @@ Gli URL sono centralizzati in `urls.py` nella root del plugin: per aggiornarli b
 
 ## Changelog
 
+### 2.0
+- Fix crash esportazione comuni con apostrofo nel nome (es. `Reggio nell'Emilia`) — [issue #10](https://github.com/pigreco/anncsu_loader/issues/10): l'apostrofo non veniva escaped nella query SQL.
+- Nome file di output sanificato: apostrofi, spazi e caratteri speciali sostituiti da `_` (es. `anncsu_Reggio_nell_Emilia.parquet`).
+- Annotazioni `# nosec B608` su tutte le query DuckDB (falsi positivi Bandit: path Parquet da file picker Qt, non da input utente libero).
+
 ### 1.9
 - URL di download (`ANNCSU_URL`, `ISTAT_URL`) spostati in `urls.py` nella root del plugin per facilitarne la manutenzione senza toccare il codice principale.
 - Aggiornati URL al dominio `gbvitrano.it`.

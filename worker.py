@@ -135,13 +135,14 @@ class AnncsuWorker(QThread):
         self.progresso.emit(20, "Apertura file Parquet...")
         con = duckdb.connect()
         self.progresso.emit(50, "Lettura lista comuni...")
-        result = con.execute(f"""
-            SELECT NOME_COMUNE, CODICE_ISTAT, COUNT(*) as N
-            FROM read_parquet('{parquet_unix}')
-            WHERE NOME_COMUNE IS NOT NULL
-            GROUP BY NOME_COMUNE, CODICE_ISTAT
-            ORDER BY NOME_COMUNE
-        """).fetchall()
+        sql = (
+            f"SELECT NOME_COMUNE, CODICE_ISTAT, COUNT(*) as N"  # nosec B608
+            f" FROM read_parquet('{parquet_unix}')"
+            f" WHERE NOME_COMUNE IS NOT NULL"
+            f" GROUP BY NOME_COMUNE, CODICE_ISTAT"
+            f" ORDER BY NOME_COMUNE"
+        )
+        result = con.execute(sql).fetchall()
         self.progresso.emit(100, f"{len(result):,} comuni trovati.")
         self.comuni_pronti.emit(result)
 
@@ -153,14 +154,14 @@ class AnncsuWorker(QThread):
         con = duckdb.connect()
 
         if self.comuni:
-            lista  = ", ".join(f"'{c}'" for c in self.comuni)
+            lista  = ", ".join("'{}'".format(c.replace("'", "''")) for c in self.comuni)
             filtro = f"WHERE NOME_COMUNE IN ({lista})"
         else:
             filtro = ""
 
         self.progresso.emit(15, "Conteggio record...")
         n_tot = con.execute(
-            f"SELECT COUNT(*) FROM read_parquet('{parquet_unix}') {filtro}"
+            f"SELECT COUNT(*) FROM read_parquet('{parquet_unix}') {filtro}"  # nosec B608
         ).fetchone()[0]
         self.progresso.emit(25, f"{n_tot:,} record da esportare...")
 
@@ -173,14 +174,14 @@ class AnncsuWorker(QThread):
             src_name = os.path.basename(parquet_unix).lower()
             if src_name.startswith("anncsu"):
                 self.progresso.emit(35, "Lettura dati in memoria...")
-                rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")
+                rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")  # nosec B608
                 safe_cols = [
                     col for col, dtype in zip(rel.columns, rel.dtypes)
                     if "GEOMETRY" not in str(dtype).upper()
                 ]
                 col_list = ", ".join(f'"{c}"' for c in safe_cols)
                 df = con.execute(
-                    f"SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}"
+                    f"SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}"  # nosec B608
                 ).fetchdf()
                 if "latitude" not in df.columns or "longitude" not in df.columns:
                     raise Exception(
@@ -195,25 +196,25 @@ class AnncsuWorker(QThread):
                 self.completato.emit(self.output_path, n)
             else:
                 self.progresso.emit(50, "Scrittura Parquet...")
-                con.execute(f"""
-                    COPY (
-                        SELECT * FROM read_parquet('{parquet_unix}') {filtro}
-                    ) TO '{output_unix}' (FORMAT PARQUET)
-                """)
+                sql = (
+                    f"COPY (SELECT * FROM read_parquet('{parquet_unix}') {filtro})"  # nosec B608
+                    f" TO '{output_unix}' (FORMAT PARQUET)"
+                )
+                con.execute(sql)
                 self.progresso.emit(100, "Completato.")
                 self.completato.emit(self.output_path, n_tot)
 
         elif self.fmt == "gpkg":
             self.progresso.emit(35, "Lettura dati in memoria...")
             # Escludi colonne GEOMETRY non convertibili in pandas da DuckDB
-            rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")
+            rel = con.sql(f"SELECT * FROM read_parquet('{parquet_unix}') LIMIT 0")  # nosec B608
             safe_cols = [
                 col for col, dtype in zip(rel.columns, rel.dtypes)
                 if "GEOMETRY" not in str(dtype).upper()
             ]
             col_list = ", ".join(f'"{c}"' for c in safe_cols)
             df = con.execute(
-                f"SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}"
+                f"SELECT {col_list} FROM read_parquet('{parquet_unix}') {filtro}"  # nosec B608
             ).fetchdf()
             if "latitude" not in df.columns or "longitude" not in df.columns:
                 raise Exception(
@@ -414,17 +415,15 @@ class AnncsuWorker(QThread):
         order_by = "ORDER BY " + ", ".join(order_parts)
 
         self.progresso.emit(50, "Esecuzione query...")
-        rows = con.execute(f"""
-            SELECT
-                NOME_COMUNE, CODICE_ISTAT, ODONIMO,
-                DIZIONE_LINGUA1, DIZIONE_LINGUA2,
-                CIVICO, ESPONENTE, SPECIFICITA, METRICO,
-                latitude, longitude, QUOTA, METODO
-            FROM read_parquet('{parquet_unix}')
-            {where}
-            {order_by}
-            LIMIT {self.limite}
-        """, params).fetchall()
+        sql = (
+            f"SELECT NOME_COMUNE, CODICE_ISTAT, ODONIMO,"  # nosec B608
+            f" DIZIONE_LINGUA1, DIZIONE_LINGUA2,"
+            f" CIVICO, ESPONENTE, SPECIFICITA, METRICO,"
+            f" latitude, longitude, QUOTA, METODO"
+            f" FROM read_parquet('{parquet_unix}')"
+            f" {where} {order_by} LIMIT {self.limite}"
+        )
+        rows = con.execute(sql, params).fetchall()
 
         cols = [
             "NOME_COMUNE","CODICE_ISTAT","ODONIMO",

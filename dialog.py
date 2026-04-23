@@ -623,7 +623,10 @@ class AnncsuDialog(QDialog):
         cartella = self.txt_output_dir.text().strip() or os.path.dirname(parquet)
         comuni   = self._comuni_selezionati()
         if comuni:
-            tag = "_".join(comuni[:3])[:50]
+            def _slug(s):
+                import re
+                return re.sub(r"[^A-Za-z0-9]+", "_", s).strip("_")
+            tag = "_".join(_slug(c) for c in comuni[:3])[:50]
             if len(comuni) > 3:
                 tag += f"_e_altri_{len(comuni)-3}"
         else:
