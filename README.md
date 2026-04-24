@@ -82,6 +82,9 @@ Gli URL sono centralizzati in `urls.py` nella root del plugin: per aggiornarli b
 
 ## Changelog
 
+### 2.1
+- Fix separatore di percorso su Windows: `os.path.join` produceva un percorso misto (es. `F:/TEMP\file.parquet`) che impediva l'auto-popolamento del campo **File ParquetANNCSU** al termine del download — [issue #11](https://github.com/pigreco/anncsu_loader/issues/11).
+
 ### 2.0
 - Fix crash esportazione comuni con apostrofo nel nome (es. `Reggio nell'Emilia`) — [issue #10](https://github.com/pigreco/anncsu_loader/issues/10): l'apostrofo non veniva escaped nella query SQL.
 - Nome file di output sanificato: apostrofi, spazi e caratteri speciali sostituiti da `_` (es. `anncsu_Reggio_nell_Emilia.parquet`).

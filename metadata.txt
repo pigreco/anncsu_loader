@@ -3,7 +3,7 @@ name=ANNCSU Loader
 qgisMinimumVersion=3.20
 qgisMaximumVersion=4.99
 description=Carica indirizzi ANNCSU da file Parquet locale filtrando per comune / Load ANNCSU addresses from local Parquet file filtered by municipality
-version=2.0
+version=2.1
 author=Salvatore Fiandaca
 email=pigrecoinfinito@gmail.com
 about=Plugin to load ANNCSU data (Italian National Archive of Civic Numbers and Urban Streets)
@@ -26,6 +26,8 @@ experimental=True
 deprecated=False
 server=False
 changelog=
+    2.1 Fix separatore di percorso su Windows: os.path.join produceva backslash nel percorso
+        visualizzato e nel campo File ParquetANNCSU che non veniva auto-popolato — issue #11
     2.0 Fix crash esportazione comuni con apostrofo nel nome (es. "Reggio nell'Emilia") — issue #10
         Nome file di output sanificato: apostrofi e spazi sostituiti da underscore
         Annotazioni nosec B608 su tutte le query DuckDB (falsi positivi Bandit)
