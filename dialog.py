@@ -451,7 +451,7 @@ class AnncsuDialog(QDialog):
         d = self.txt_download_dir.text().strip()
         n = self.txt_nome_file.text().strip()
         if d and n:
-            self.lbl_download_path.setText(os.path.join(d, n))
+            self.lbl_download_path.setText(os.path.join(d, n).replace("\\", "/"))
         else:
             self.lbl_download_path.setText("")
 
@@ -463,7 +463,7 @@ class AnncsuDialog(QDialog):
                                 "Specifica la cartella di destinazione e il nome del file.")
             return
 
-        dest_path = os.path.join(dest_dir, nome_file)
+        dest_path = os.path.join(dest_dir, nome_file).replace("\\", "/")
         if os.path.exists(dest_path):
             QMessageBox.warning(
                 self, "File esistente",
